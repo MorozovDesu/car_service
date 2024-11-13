@@ -1,0 +1,49 @@
+<!-- templates/search.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Поиск клиента</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Поиск клиента</h1>
+    <form method="get" action="{{ url_for('search') }}">
+        <input type="text" name="query" placeholder="Поиск по ID или ФИО" value="{{ query }}">
+        <button type="submit">Найти</button>
+    </form>
+
+    {% if clients %}
+        <h2>Результаты поиска</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID клиента</th>
+                    <th>ФИО</th>
+                    <th>Email</th>
+                    <th>Дата рождения</th>
+                    <th>Номер телефона</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                    <tr>
+                        <td>{{ client["ID клиента"] }}</td>
+                        <td>{{ client["ФИО"] }}</td>
+                        <td>{{ client["Email"] }}</td>
+                        <td>{{ client["Дата рождения"] }}</td>
+                        <td>{{ client["Номер телефона"] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Клиенты не найдены</p>
+    {% endif %}
+    
+    <!-- Кнопка "Назад" для возврата на главную страницу -->
+    <a href="{{ url_for('index') }}">
+        <button type="button">Назад</button>
+    </a>
+</body>
+</html>

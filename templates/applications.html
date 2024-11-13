@@ -1,0 +1,54 @@
+<!-- templates/applications.html -->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявки</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Заявки</h1>
+
+    <!-- Форма поиска -->
+    <form method="POST">
+        <input type="text" name="query" placeholder="Поиск по номеру заявки или ID клиента" value="{{ query if query else '' }}">
+        <button type="submit">Поиск</button>
+    </form>
+
+    <!-- Таблица заявок -->
+    <table>
+        <thead>
+            <tr>
+                <th>Номер заявки</th>
+                <th>ID Клиента</th>
+                <th>ID услуги</th>
+                <th>ID выполняющего работы</th>
+                <th>ID проверяющего</th>
+                <th>Гарантия</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for application in applications %}
+                <tr>
+                    <td>{{ application['Номер заявки'] }}</td>
+                    <td>{{ application['ID Клиента'] }}</td>
+                    <td>{{ application['ID услуги'] }}</td>
+                    <td>{{ application['ID выполняющего работы'] }}</td>
+                    <td>{{ application['ID проверяющего'] }}</td>
+                    <td>{{ application['Гарантия'] }}</td>
+                    <td>{{ application['Дата'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Навигация по страницам -->
+    <div>
+        <a href="{{ url_for('applications', page=page - 1) }}" {% if page == 1 %}style="display: none;"{% endif %}>Назад</a>
+        <a href="{{ url_for('applications', page=page + 1) }}">Вперед</a>
+    </div>
+</body>
+</html>
