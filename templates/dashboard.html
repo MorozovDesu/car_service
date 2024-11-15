@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">Главная</a></li>
+            <li><a href="{{ url_for('clients') }}">Клиенты</a></li>
+            <li><a href="{{ url_for('applications') }}">Заявки</a></li>
+            <li><a href="{{ url_for('logout') }}">Выход</a></li>
+        </ul>
+    </nav>
+    <div class="content">
+        <h1>Добро пожаловать, {{ user }}!</h1>
+        <p>Вы успешно вошли в систему. Используйте меню для навигации.</p>
+    </div>
+</body>
+</html>
