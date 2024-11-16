@@ -1,43 +1,75 @@
 from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
-from models import get_applications_paginated, get_clients_paginated, add_client, search_application, search_client
+from models import get_applications_paginated, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
+from models import get_client_by_phone, get_worker_by_email
+
+
+from datetime import timedelta
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
 app.secret_key = 'your_secret_key'  # Секретный ключ для работы сессий (измените на ваш)
+app.permanent_session_lifetime = timedelta(days=5)
 
-# Пример данных пользователей
-users = {
-    'admin': '1',
-    'user': '1'
-}
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
-    """Главная страница с формой входа."""
+    """Единая страница входа для клиента и работника."""
     if request.method == 'POST':
-        username = request.form.get('username')
+        identifier = request.form.get('identifier')  # Номер телефона или Email
         password = request.form.get('password')
 
-        if username in users and users[username] == password:
-            session['user'] = username
-            return redirect(url_for('dashboard'))  # Переход на основную страницу
+        # Сначала пытаемся найти клиента по номеру телефона
+        client = get_client_by_phone(identifier)
 
-        return render_template('login.html', error="Неверный логин или пароль")
-    
+        if client and client['Пароль'] == password:  # Сравниваем пароли напрямую
+            # Если нашли клиента, сохраняем ID в сессию
+            session['client_id'] = client['ID клиента']
+            session['user_name'] = client['ФИО']
+            # Переход на страницу клиента
+            return redirect(url_for('dashboard'))
+
+        # Если не нашли клиента, пытаемся найти работника по email
+        worker = get_worker_by_email(identifier)
+
+        if worker and worker['Пароль'] == password:  # Сравниваем пароли напрямую
+            # Если нашли работника, сохраняем ID в сессию
+            session['worker_id'] = worker['ID работника']
+            session['worker_position'] = worker['Должность']
+            # Переход на страницу работника
+            return redirect(url_for('dashboard_worker'))
+
+        # Если ни клиент, ни работник не найдены
+        return render_template('login.html', error="Неверные данные для входа")
+
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     """Выход из системы."""
-    session.pop('user', None)
+    session.pop('client_id', None)  # Удаляем client_id из сессии
     return redirect(url_for('login'))
+
 
 @app.route('/dashboard')
 def dashboard():
-    """Страница дашборда."""
-    if 'user' not in session:
+    """Страница дашборда для клиента."""
+    if 'client_id' not in session:
         return redirect(url_for('login'))
-    return render_template('dashboard.html', user=session['user'])
+    return render_template('dashboard.html', client_id=session['client_id'])
+
+@app.route('/dashboard/client')
+def dashboard_client():
+    """Страница дашборда для клиента."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dashboard_client.html', client_id=session['client_id'])
+
+@app.route('/dashboard/worker')
+def dashboard_worker():
+    """Страница дашборда для работника."""
+    if 'worker_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dashboard_worker.html', worker_id=session['worker_id'])
 
 @app.route('/clients')
 def clients():

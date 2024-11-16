@@ -1,10 +1,4 @@
-# models.py
-
-import psycopg2
-from config import Config
-
-# models.py
-
+from werkzeug.security import generate_password_hash
 import psycopg2
 from config import Config
 
@@ -22,6 +16,77 @@ def connect_db():
     except Exception as e:
         print("Ошибка подключения к базе данных:", e)
         return None
+
+from werkzeug.security import check_password_hash
+
+def get_client_by_phone(phone_number):
+    """Получает клиента по номеру телефона."""
+    conn = connect_db()
+    if conn is None:
+        return None
+
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT "ID клиента", "ФИО", "Email", "Дата рождения", "Номер телефона", "Пароль" '
+            'FROM public."Клиент" '
+            'WHERE "Номер телефона" = %s;',
+            (phone_number,)
+        )
+        row = cur.fetchone()
+        cur.close()
+    except Exception as e:
+        print("Ошибка при выполнении запроса:", e)
+        row = None
+    finally:
+        conn.close()
+
+    if row:
+        client = {
+            "ID клиента": row[0],
+            "ФИО": row[1],
+            "Email": row[2],
+            "Дата рождения": row[3].isoformat() if row[3] else None,
+            "Номер телефона": row[4],
+            "Пароль": row[5]
+        }
+        return client
+    return None
+
+
+def get_worker_by_email(email):
+    """Получает работника по email."""
+    conn = connect_db()
+    if conn is None:
+        return None
+
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT "ID работника", "ФИО", "Должность", "Пароль", "Email" '
+            'FROM public."Работник" '
+            'WHERE "Email" = %s;',
+            (email,)
+        )
+        row = cur.fetchone()
+        cur.close()
+    except Exception as e:
+        print("Ошибка при выполнении запроса:", e)
+        row = None
+    finally:
+        conn.close()
+
+    if row:
+        worker = {
+            "ID работника": row[0],
+            "ФИО": row[1],
+            "Должность": row[2],
+            "Пароль": row[3],
+            "Email": row[4]
+        }
+        return worker
+    return None
+
 
 def get_clients_paginated(page, per_page):
     """Получает клиентов с учетом пагинации."""
@@ -108,17 +173,20 @@ def search_client(query):
     return clients
 
 
-def add_client(fio, email, dob, phone):
-    """Добавляет нового клиента в таблицу 'Клиент'."""
+def add_client(fio, email, dob, phone, password):
+    """Добавляет нового клиента в таблицу 'Клиент' с зашифрованным паролем."""
     conn = connect_db()
     if conn is None:
         return False
 
+    hashed_password = generate_password_hash(password)
+
     try:
         cur = conn.cursor()
         cur.execute(
-            'INSERT INTO public."Клиент" ("ФИО", "Email", "Дата рождения", "Номер телефона") VALUES (%s, %s, %s, %s)',
-            (fio, email, dob, phone)
+            'INSERT INTO public."Клиент" ("ФИО", "Email", "Дата рождения", "Номер телефона", "Пароль") '
+            'VALUES (%s, %s, %s, %s, %s)',
+            (fio, email, dob, phone, hashed_password)
         )
         conn.commit()
         cur.close()

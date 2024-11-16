@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Поиск клиента</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/search.css') }}">
 </head>
 <body>
     <h1>Поиск клиента</h1>
@@ -42,7 +42,7 @@
     {% endif %}
     
     <!-- Кнопка "Назад" для возврата на главную страницу -->
-    <a href="{{ url_for('index') }}">
+    <a href="{{ url_for('clients') }}">
         <button type="button">Назад</button>
     </a>
 </body>
