@@ -7,18 +7,41 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css') }}">
 </head>
 <body>
-    <h2>Вход</h2>
-    <form method="POST">
-        <label for="identifier">Номер телефона или Email:</label>
-        <input type="text" id="identifier" name="identifier" required placeholder="Введите номер телефона или email">
-        
-        <label for="password">Пароль:</label>
-        <input type="password" id="password" name="password" required placeholder="Введите пароль">
-        
-        <button type="submit">Войти</button>
-    </form>
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
+    <div class="login-container">
+        <h1>Вход</h1>
+        <form method="POST">
+            <div class="form-group">
+                <label for="identifier">Номер телефона или Email:</label>
+                <input type="text" id="identifier" name="identifier" required placeholder="Введите номер телефона или email">
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <div class="password-container">
+                    <input type="password" id="password" name="password" required placeholder="Введите пароль">
+                    <button type="button" id="show-password" class="show-password-btn">Показать</button>
+                </div>
+            </div>
+            <button type="submit">Войти</button>
+        </form>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+
+    <script>
+        document.getElementById('show-password').addEventListener('click', function() {
+            var passwordField = document.getElementById('password');
+            var button = document.getElementById('show-password');
+            
+            // Переключаем тип поля с password на text и наоборот
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                button.textContent = "Скрыть";
+            } else {
+                passwordField.type = "password";
+                button.textContent = "Показать";
+            }
+        });
+    </script>
 </body>
 </html>
