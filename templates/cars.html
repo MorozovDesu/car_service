@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои автомобили</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/cars.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">Главная</a></li>
+            <li><a href="{{ url_for('applications') }}">Заявки</a></li>
+            <li><a href="{{ url_for('cars') }}">Мои автомобили</a></li>
+            <li><a href="{{ url_for('logout') }}">Выход</a></li>
+        </ul>
+    </nav>
+    <div class="content">
+        <h1>Мои автомобили</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Номер автомобиля</th>
+                    <th>Название</th>
+                    <th>Марка</th>
+                    <th>Модель</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for car in cars %}
+                    <tr>
+                        <td>{{ car['Номер автомобиля'] }}</td>
+                        <td>{{ car['Название'] }}</td>
+                        <td>{{ car['Марка'] }}</td>
+                        <td>{{ car['Модель'] }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4">Нет зарегистрированных автомобилей</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

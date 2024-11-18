@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
-from models import connect_db, get_applications_for_client, get_applications_paginated, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
+from models import connect_db, get_applications_for_client, get_applications_paginated, get_cars_by_client_id, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
 from models import get_client_by_phone, get_worker_by_email
 
 
@@ -189,5 +189,15 @@ def delete_application_route(application_number):
     else:
         return "Ошибка при удалении заявки", 500
     
+@app.route('/cars')
+def cars():
+    """Страница с информацией об автомобилях клиента."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    client_id = session['client_id']
+    cars = get_cars_by_client_id(client_id)
+    return render_template('cars.html', cars=cars, user=session.get('user_name', 'Пользователь'))
+
 if __name__ == '__main__':
     app.run(debug=True)
