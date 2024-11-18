@@ -199,5 +199,117 @@ def cars():
     cars = get_cars_by_client_id(client_id)
     return render_template('cars.html', cars=cars, user=session.get('user_name', 'Пользователь'))
 
+
+
+
+
+
+
+
+@app.route('/cars/delete/<string:car_number>', methods=['POST'])
+def delete_car(car_number):
+    """Удаление автомобиля клиента."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            # Удаляем автомобиль по номеру
+            cur.execute(
+                '''
+                DELETE FROM public."Карточка автомобиля"
+                WHERE "Номер автомобиля" = %s AND "ID клиента" = %s;
+                ''',
+                (car_number, session['client_id'])
+            )
+            conn.commit()
+            return redirect(url_for('cars'))  # Редирект обратно на страницу с автомобилями
+    except Exception as e:
+        print("Ошибка при удалении автомобиля:", e)
+        conn.rollback()
+        return "Ошибка при удалении автомобиля", 500
+    finally:
+        conn.close()
+
+
+@app.route('/cars/add', methods=['GET', 'POST'])
+def add_car():
+    """Страница для добавления машины клиента."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        # Получаем данные из формы
+        car_number = request.form.get('car_number')
+        car_name = request.form.get('car_name')
+        car_brand = request.form.get('car_brand')
+        model = request.form.get('model')
+
+        # Добавляем машину в базу данных
+        conn = connect_db()
+        if conn is None:
+            return "Ошибка подключения к базе данных", 500
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    '''
+                    INSERT INTO public."Карточка автомобиля" ("Номер автомобиля", "Название", "Марка", "Модель", "ID клиента")
+                    VALUES (%s, %s, %s, %s, %s);
+                    ''',
+                    (car_number, car_name, car_brand, model, session['client_id'])
+                )
+                conn.commit()
+            return redirect(url_for('cars'))
+        except Exception as e:
+            print("Ошибка при добавлении машины:", e)
+            conn.rollback()
+            return "Ошибка при добавлении машины", 500
+        finally:
+            conn.close()
+
+    # Получаем список моделей для выбора
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT "Модель" FROM public."Модель автомобиля";')
+            models = cur.fetchall()
+    except Exception as e:
+        print("Ошибка при получении моделей:", e)
+        models = []
+    finally:
+        conn.close()
+
+    # Отображаем форму с выбором модели
+    return render_template('add_car.html', models=[row[0] for row in models])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+

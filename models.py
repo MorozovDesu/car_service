@@ -372,3 +372,40 @@ def get_cars_by_client_id(client_id):
         }
         for row in rows
     ]
+
+
+
+def get_cars_by_client_id(client_id):
+    """Получает список автомобилей клиента по его ID."""
+    conn = connect_db()
+    if conn is None:
+        return []
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''
+                SELECT "Номер автомобиля", "Название", "Марка", "Модель"
+                FROM public."Карточка автомобиля"
+                WHERE "ID клиента" = %s;
+                ''',
+                (client_id,)
+            )
+            rows = cur.fetchall()
+    except Exception as e:
+        print("Ошибка при выполнении запроса:", e)
+        rows = []
+    finally:
+        conn.close()
+
+    return [
+        {
+            "Номер автомобиля": row[0],
+            "Название": row[1],
+            "Марка": row[2],
+            "Модель": row[3]
+        }
+        for row in rows
+    ]
+
+
