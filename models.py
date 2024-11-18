@@ -241,44 +241,40 @@ def search_application(query):
     ]
 
 def get_applications_for_client(client_id, page, per_page):
-    """Получает заявки клиента с учетом пагинации."""
+    """Получает список заявок клиента с названиями услуг."""
     conn = connect_db()
     if conn is None:
         return []
 
-    offset = (page - 1) * per_page
-
     try:
-        cur = conn.cursor()
-        cur.execute(
-            'SELECT "Номер заявки", "ID Клиента", "ID услуги", "ID выполняющего работы", "ID проверяющего", "Гарантия", "Дата" '
-            'FROM public."Заявка" '
-            'WHERE "ID Клиента" = %s '
-            'ORDER BY "Номер заявки" '
-            'LIMIT %s OFFSET %s;',
-            (client_id, per_page, offset)
-        )
-        rows = cur.fetchall()
-        cur.close()
+        with conn.cursor() as cur:
+            offset = (page - 1) * per_page
+            cur.execute('''
+                SELECT z."Номер заявки", u."Тип услуги", z."Гарантия", z."Дата"
+                FROM public."Заявка" z
+                JOIN public."Услуга" u ON z."ID услуги" = u."ID услуги"
+                WHERE z."ID Клиента" = %s
+                ORDER BY z."Дата" DESC
+                LIMIT %s OFFSET %s;
+            ''', (client_id, per_page, offset))
+            applications = cur.fetchall()
+
+            # Преобразуем список к формату словаря для удобства работы в шаблоне
+            return [
+                {
+                    "Номер заявки": app[0],
+                    "Тип услуги": app[1],
+                    "Гарантия": app[2],
+                    "Дата": app[3]
+                }
+                for app in applications
+            ]
     except Exception as e:
-        print("Ошибка при выполнении запроса:", e)
-        rows = []
+        print("Ошибка при получении заявок:", e)
+        return []
     finally:
         conn.close()
 
-    applications = [
-        {
-            "Номер заявки": row[0],
-            "ID Клиента": row[1],
-            "ID услуги": row[2],
-            "ID выполняющего работы": row[3],
-            "ID проверяющего": row[4],
-            "Гарантия": row[5],
-            "Дата": row[6].isoformat() if row[6] else None,
-        }
-        for row in rows
-    ]
-    return applications
     
 def delete_application(application_number):
     """Удаляет заявку и все связанные записи в таблице 'Заказ'."""

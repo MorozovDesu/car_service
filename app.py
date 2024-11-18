@@ -113,7 +113,7 @@ def search():
         user=session.get('user_name', 'Пользователь')
     )
 
-
+# 
 @app.route('/applications', methods=['GET'])
 def applications():
     """Страница заявок."""
@@ -125,6 +125,7 @@ def applications():
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
+    # Получаем заявки с названиями услуг
     applications = get_applications_for_client(client_id, page, per_page)
 
     return render_template(
@@ -133,6 +134,7 @@ def applications():
         page=page,
         user=session.get('user_name', 'Пользователь')
     )
+# 
 
 @app.route('/applications/delete/<int:application_id>', methods=['POST'])
 def delete_application(application_id):
@@ -267,17 +269,6 @@ def add_car():
 
     # Отображаем форму с выбором модели
     return render_template('add_car.html', models=[row[0] for row in models])
-
-
-
-
-
-
-
-
-
-
-
 
 @app.route('/applications/add', methods=['GET', 'POST'])
 def add_application():
