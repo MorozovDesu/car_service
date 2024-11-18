@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
-from models import connect_db, get_applications_for_client, get_applications_paginated, get_cars_by_client_id, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
+from models import connect_db, get_applications_for_client, get_applications_paginated, get_cars_by_client_id, get_client_by_phone, get_clients_paginated,  search_application, search_client
 from models import get_client_by_phone, get_worker_by_email
 
 
@@ -114,21 +114,6 @@ def search():
     )
 
 
-@app.route('/api/clients', methods=['POST'])
-def api_add_client():
-    """API для добавления нового клиента."""
-    if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.json
-    if not data or not all(k in data for k in ("ФИО", "Email", "Дата рождения", "Номер телефона")):
-        abort(400, description="Некорректные данные. Требуются поля 'ФИО', 'Email', 'Дата рождения', 'Номер телефона'.")
-
-    if add_client(data["ФИО"], data["Email"], data["Дата рождения"], data["Номер телефона"]):
-        return jsonify({"message": "Клиент успешно добавлен"}), 201
-    else:
-        return "Ошибка добавления клиента", 500
-
 @app.route('/applications', methods=['GET'])
 def applications():
     """Страница заявок."""
@@ -198,13 +183,6 @@ def cars():
     client_id = session['client_id']
     cars = get_cars_by_client_id(client_id)
     return render_template('cars.html', cars=cars, user=session.get('user_name', 'Пользователь'))
-
-
-
-
-
-
-
 
 @app.route('/cars/delete/<string:car_number>', methods=['POST'])
 def delete_car(car_number):

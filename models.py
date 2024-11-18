@@ -165,32 +165,6 @@ def search_client(query):
         for row in rows
     ]
 
-def add_client(fio, email, dob, phone, password):
-    """Добавляет клиента с хешированным паролем."""
-    conn = connect_db()
-    if conn is None:
-        return False
-
-    hashed_password = generate_password_hash(password)
-
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                '''
-                INSERT INTO public."Клиент" ("ФИО", "Email", "Дата рождения", "Номер телефона", "Пароль")
-                VALUES (%s, %s, %s, %s, %s);
-                ''',
-                (fio, email, dob, phone, hashed_password)
-            )
-            conn.commit()
-            return True
-    except Exception as e:
-        print("Ошибка при добавлении клиента:", e)
-        conn.rollback()
-        return False
-    finally:
-        conn.close()
-
 # Функции для работы с заявками
 def get_applications_paginated(page, per_page):
     """Получает список заявок с пагинацией."""
@@ -372,8 +346,6 @@ def get_cars_by_client_id(client_id):
         }
         for row in rows
     ]
-
-
 
 def get_cars_by_client_id(client_id):
     """Получает список автомобилей клиента по его ID."""
