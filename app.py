@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
-from models import get_applications_paginated, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
+from models import get_applications_for_client, get_applications_paginated, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
 from models import get_client_by_phone, get_worker_by_email
 
 
@@ -10,45 +10,14 @@ app.config.from_object('config.Config')
 app.secret_key = 'your_secret_key'  # Секретный ключ для работы сессий (измените на ваш)
 app.permanent_session_lifetime = timedelta(days=5)
 
-####################################################################
-def auto_login():
-    """Автоматический вход с предустановленными данными."""
-    phone = '89278087118'  # Номер телефона
-    password = 'ca895'     # Пароль
-
-    # Сначала пытаемся найти клиента по номеру телефона
-    client = get_client_by_phone(phone)
-
-    if client and client['Пароль'] == password:  # Сравниваем пароли напрямую
-        # Если нашли клиента, сохраняем ID в сессию
-        session['client_id'] = client['ID клиента']
-        session['user_name'] = client['ФИО']
-    else:
-        # Если не нашли клиента, пытаемся найти работника по email
-        worker = get_worker_by_email(phone)
-
-        if worker and worker['Пароль'] == password:  # Сравниваем пароли напрямую
-            # Если нашли работника, сохраняем ID в сессию
-            session['worker_id'] = worker['ID работника']
-            session['worker_position'] = worker['Должность']
-####################################################################
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
-
-    ####################################################################
-    auto_login()
-    if 'client_id' in session:
-        return redirect(url_for('dashboard'))
-    elif 'worker_id' in session:
-        return redirect(url_for('dashboard_worker'))
-    ####################################################################
-    
     """Единая страница входа для клиента и работника."""
     if request.method == 'POST':
-        identifier = request.form.get('identifier')  # Номер телефона или Email 89278087118
-        password = request.form.get('password')      # пароль ca895 поменять
-        
+        identifier = request.form.get('identifier')  # Номер телефона или Email
+        password = request.form.get('password')
+
         # Сначала пытаемся найти клиента по номеру телефона
         client = get_client_by_phone(identifier)
 
@@ -78,7 +47,6 @@ def login():
 def logout():
     """Выход из системы."""
     session.pop('client_id', None)  # Удаляем client_id из сессии
-    session.pop('worker_id', None)  # Удаляем worker_id из сессии
     return redirect(url_for('login'))
 
 
@@ -106,7 +74,8 @@ def dashboard_worker():
 @app.route('/clients')
 def clients():
     """Страница списка клиентов."""
-    if 'user' not in session:
+    # Проверяем авторизацию: клиент или работник
+    if 'client_id' not in session and 'worker_id' not in session:
         return redirect(url_for('login'))
 
     page = int(request.args.get('page', 1))
@@ -115,11 +84,12 @@ def clients():
 
     if query:
         clients = search_client(query)
-        return render_template('search.html', clients=clients, query=query, user=session['user'])
+        return render_template('search.html', clients=clients, query=query, user=session.get('user_name', 'Пользователь'))
     else:
         clients = get_clients_paginated(page, per_page)
 
-    return render_template('clients.html', clients=clients, page=page, per_page=per_page, user=session['user'])
+    return render_template('clients.html', clients=clients, page=page, per_page=per_page, user=session.get('user_name', 'Пользователь'))
+
 
 @app.route('/api/clients', methods=['GET'])
 def api_get_clients():
@@ -162,22 +132,27 @@ def api_add_client():
     else:
         return "Ошибка добавления клиента", 500
 
-@app.route('/applications', methods=['GET', 'POST'])
+@app.route('/applications', methods=['GET'])
 def applications():
     """Страница заявок."""
-    if 'user' not in session:
+    # Проверяем авторизацию
+    if 'client_id' not in session:
         return redirect(url_for('login'))
 
+    client_id = session['client_id']
     page = request.args.get('page', 1, type=int)
-    per_page = 25
+    per_page = 10
 
-    if request.method == 'POST':
-        query = request.form.get('query')
-        applications = search_application(query)
-        return render_template('applications.html', applications=applications, page=1, query=query, user=session['user'])
+    applications = get_applications_for_client(client_id, page, per_page)
 
-    applications = get_applications_paginated(page, per_page)
-    return render_template('applications.html', applications=applications, page=page, user=session['user'])
+    return render_template(
+        'applications.html',
+        applications=applications,
+        page=page,
+        user=session.get('user_name', 'Пользователь')
+    )
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
