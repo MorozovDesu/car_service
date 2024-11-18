@@ -10,14 +10,45 @@ app.config.from_object('config.Config')
 app.secret_key = 'your_secret_key'  # Секретный ключ для работы сессий (измените на ваш)
 app.permanent_session_lifetime = timedelta(days=5)
 
+####################################################################
+def auto_login():
+    """Автоматический вход с предустановленными данными."""
+    phone = '89278087118'  # Номер телефона
+    password = 'ca895'     # Пароль
+
+    # Сначала пытаемся найти клиента по номеру телефона
+    client = get_client_by_phone(phone)
+
+    if client and client['Пароль'] == password:  # Сравниваем пароли напрямую
+        # Если нашли клиента, сохраняем ID в сессию
+        session['client_id'] = client['ID клиента']
+        session['user_name'] = client['ФИО']
+    else:
+        # Если не нашли клиента, пытаемся найти работника по email
+        worker = get_worker_by_email(phone)
+
+        if worker and worker['Пароль'] == password:  # Сравниваем пароли напрямую
+            # Если нашли работника, сохраняем ID в сессию
+            session['worker_id'] = worker['ID работника']
+            session['worker_position'] = worker['Должность']
+####################################################################
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
+
+    ####################################################################
+    auto_login()
+    if 'client_id' in session:
+        return redirect(url_for('dashboard'))
+    elif 'worker_id' in session:
+        return redirect(url_for('dashboard_worker'))
+    ####################################################################
+    
     """Единая страница входа для клиента и работника."""
     if request.method == 'POST':
-        identifier = request.form.get('identifier')  # Номер телефона или Email
-        password = request.form.get('password')
-
+        identifier = request.form.get('identifier')  # Номер телефона или Email 89278087118
+        password = request.form.get('password')      # пароль ca895 поменять
+        
         # Сначала пытаемся найти клиента по номеру телефона
         client = get_client_by_phone(identifier)
 
@@ -47,6 +78,7 @@ def login():
 def logout():
     """Выход из системы."""
     session.pop('client_id', None)  # Удаляем client_id из сессии
+    session.pop('worker_id', None)  # Удаляем worker_id из сессии
     return redirect(url_for('login'))
 
 
