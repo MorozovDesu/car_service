@@ -279,6 +279,62 @@ def add_car():
 
 
 
+@app.route('/applications/add', methods=['GET', 'POST'])
+def add_application():
+    """Страница для добавления заявки."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    # Подключаемся к базе данных
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    # Получаем список услуг из базы данных
+    services = []
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT "ID услуги", "Тип услуги" FROM public."Услуга";')
+            services = cur.fetchall()  # Список услуг
+    except Exception as e:
+        print("Ошибка при получении услуг:", e)
+        return "Ошибка при получении услуг", 500
+    finally:
+        conn.close()
+
+    # Обработка формы при POST-запросе
+    if request.method == 'POST':
+        service_id = request.form.get('service_id')
+        warranty = request.form.get('warranty')
+        warranty = True if warranty == 'true' else False  # Преобразуем строку в bool
+        date = request.form.get('date')
+
+        # Добавляем заявку в базу данных
+        conn = connect_db()
+        if conn is None:
+            return "Ошибка подключения к базе данных", 500
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    '''
+                    INSERT INTO public."Заявка" ("ID Клиента", "ID услуги", "Гарантия", "Дата")
+                    VALUES (%s, %s, %s, %s);
+                    ''',
+                    (session['client_id'], service_id, warranty, date)
+                )
+                conn.commit()
+            return redirect(url_for('applications'))  # Перенаправляем на страницу заявок
+        except Exception as e:
+            print("Ошибка при добавлении заявки:", e)
+            conn.rollback()
+            return "Ошибка при добавлении заявки", 500
+        finally:
+            conn.close()
+
+    # Отображаем форму с услугами
+    return render_template('add_application.html', services=services)
+
 
 
 
