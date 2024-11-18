@@ -89,7 +89,7 @@ table td[colspan="5"] {
 /* Стили для кнопки добавления авто */
 button {
     padding: 12px 20px;
-    background-color: #333;
+    background-color: #0a0a0a;
     color: white;
     border: none;
     border-radius: 4px;
@@ -100,7 +100,7 @@ button {
 }
 
 button:hover {
-    background-color: #555;
+    background-color: #000000;
 }
 
 /* Стили для кнопки "Назад" */
@@ -121,6 +121,6 @@ button[onclick="window.history.back();"]:hover {
 }
 
 .btn-primary:hover {
-    background-color: #00000075;
+    background-color: #000000e1;
 }
 

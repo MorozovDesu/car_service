@@ -27,6 +27,9 @@
                     <th>Действия</th>
                 </tr>
             </thead>
+            <div class="add-car-button">
+                <a href="{{ url_for('add_car') }}" class="btn btn-primary"><button type="submit">Добавить авто</button></a>
+            </div>
             <tbody>
                 {% for car in cars %}
                     <tr>
@@ -47,9 +50,7 @@
                 {% endfor %}
             </tbody>
         </table>
-        <div class="add-car-button">
-            <a href="{{ url_for('add_car') }}" class="btn btn-primary">Добавить авто</a>
-        </div>
+        
     </div>
 </body>
 </html>

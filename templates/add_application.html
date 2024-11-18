@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить заявку</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/cars.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">Главная</a></li>
+            <li><a href="{{ url_for('cars') }}">Мои автомобили</a></li>
+            <li><a href="{{ url_for('applications') }}">Заявки</a></li>
+            <li><a href="{{ url_for('logout') }}">Выход</a></li>
+        </ul>
+    </nav>
+
+    <div class="content">
+        <h1>Добавить заявку</h1>
+        
+        <form action="{{ url_for('add_application') }}" method="POST">
+            <label for="service">Услуга:</label>
+            <select id="service" name="service" required>
+                {% for service in services %}
+                    <option value="{{ service['ID услуги'] }}">{{ service['Тип услуги'] }}</option>
+                {% endfor %}
+            </select><br>
+
+            <label for="warranty">Гарантия:</label>
+            <input type="text" id="warranty" name="warranty" required><br>
+
+            <label for="date">Дата:</label>
+            <input type="date" id="date" name="date" required><br>
+
+            <button type="submit">Добавить заявку</button>
+        </form>
+    </div>
+</body>
+</html>
