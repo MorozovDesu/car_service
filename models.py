@@ -305,3 +305,37 @@ def get_applications_for_client(client_id, page, per_page):
         for row in rows
     ]
     return applications
+    
+def delete_application(application_number):
+    """Удаляет заявку и все связанные записи в таблице 'Заказ'."""
+    conn = connect_db()
+    if conn is None:
+        return False
+
+    try:
+        with conn.cursor() as cur:
+            # Удаляем все связанные записи в таблице "Заказ"
+            cur.execute(
+                '''
+                DELETE FROM public."Заказ"
+                WHERE "Номер заявки" = %s;
+                ''',
+                (application_number,)
+            )
+
+            # Теперь удаляем саму заявку
+            cur.execute(
+                '''
+                DELETE FROM public."Заявка"
+                WHERE "Номер заявки" = %s;
+                ''',
+                (application_number,)
+            )
+            conn.commit()
+            return True
+    except Exception as e:
+        print("Ошибка при удалении заявки:", e)
+        conn.rollback()
+        return False
+    finally:
+        conn.close()

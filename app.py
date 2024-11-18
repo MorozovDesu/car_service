@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
-from models import get_applications_for_client, get_applications_paginated, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
+from models import connect_db, get_applications_for_client, get_applications_paginated, get_client_by_phone, get_clients_paginated, add_client, search_application, search_client
 from models import get_client_by_phone, get_worker_by_email
 
 
@@ -57,13 +57,6 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard.html', client_id=session['client_id'])
 
-@app.route('/dashboard/client')
-def dashboard_client():
-    """Страница дашборда для клиента."""
-    if 'client_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('dashboard_client.html', client_id=session['client_id'])
-
 @app.route('/dashboard/worker')
 def dashboard_worker():
     """Страница дашборда для работника."""
@@ -106,16 +99,20 @@ def api_get_clients():
 @app.route('/client/search', methods=['GET'])
 def search():
     """Поиск клиента."""
-    if 'user' not in session:
+    # Проверяем авторизацию
+    if 'client_id' not in session and 'worker_id' not in session:
         return redirect(url_for('login'))
 
     query = request.args.get('query', '').strip()
-    if query:
-        clients = search_client(query)
-    else:
-        clients = []
+    clients = search_client(query) if query else []
 
-    return render_template('search.html', clients=clients, query=query, user=session['user'])
+    return render_template(
+        'search.html',
+        clients=clients,
+        query=query,
+        user=session.get('user_name', 'Пользователь')
+    )
+
 
 @app.route('/api/clients', methods=['POST'])
 def api_add_client():
@@ -152,7 +149,45 @@ def applications():
         user=session.get('user_name', 'Пользователь')
     )
 
+@app.route('/applications/delete/<int:application_id>', methods=['POST'])
+def delete_application(application_id):
+    """Удаление заявки по ее номеру."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
 
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
 
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''
+                DELETE FROM public."Заявка"
+                WHERE "Номер заявки" = %s AND "ID Клиента" = %s;
+                ''',
+                (application_id, session['client_id'])
+            )
+            conn.commit()
+    except Exception as e:
+        print("Ошибка при удалении заявки:", e)
+        conn.rollback()
+        return "Ошибка при удалении заявки", 500
+    finally:
+        conn.close()
+
+    return redirect(url_for('applications'))
+
+@app.route('/applications/delete/<int:application_number>', methods=['POST'])
+def delete_application_route(application_number):
+    """Обработчик для удаления заявки."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    if delete_application(application_number):
+        return redirect(url_for('applications'))  # Редирект на страницу с заявками
+    else:
+        return "Ошибка при удалении заявки", 500
+    
 if __name__ == '__main__':
     app.run(debug=True)
