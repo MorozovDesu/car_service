@@ -11,6 +11,7 @@ app.secret_key = 'your_secret_key'  # Секретный ключ для раб�
 app.permanent_session_lifetime = timedelta(days=5)
 
 
+# Обновленная логика для login
 @app.route('/', methods=['GET', 'POST'])
 def login():
     """Единая страница входа для клиента и работника."""
@@ -35,13 +36,20 @@ def login():
             # Если нашли работника, сохраняем ID в сессию
             session['worker_id'] = worker['ID работника']
             session['worker_position'] = worker['Должность']
-            # Переход на страницу работника
-            return redirect(url_for('dashboard_worker'))
+            
+            # Проверяем роль работника
+            if worker['Должность'] == 'Слесарь':
+                return redirect(url_for('dashboard_worker'))  # Слесарь
+            elif worker['Должность'] == 'Мастер':
+                return redirect(url_for('dashboard_master'))  # Мастер
+            # elif worker['Должность'] == 'Администратор':
+            #     return redirect(url_for('dashboard_admin'))  # Администратор
 
         # Если ни клиент, ни работник не найдены
         return render_template('login.html', error="Неверные данные для входа")
 
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
@@ -569,6 +577,74 @@ def dashboard_worker():
         completed_tasks_count=completed_tasks_count,
         worker_name=session.get('worker_name', 'Исполнитель')
     )
+#/////////////////////////////////////////////////////////Обработка проверяющего
+
+@app.route('/dashboard/master', methods=['GET'])
+def dashboard_master():
+    """Дашборд для мастера, который проверяет выполненные заявки."""
+    if 'worker_id' not in session:
+        return redirect(url_for('login'))
+
+    worker_id = session['worker_id']
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            # Получение выполненных заявок для мастера, которые требуют проверки
+            cur.execute(
+                '''
+                SELECT z."Номер заявки", z."Дата", u."Тип услуги", c."ФИО", z."Гарантия", z."Дата выполнения"
+                FROM public."Заявка" z
+                JOIN public."Услуга" u ON z."ID услуги" = u."ID услуги"
+                JOIN public."Клиент" c ON z."ID Клиента" = c."ID клиента"
+                WHERE z."Дата выполнения" IS NOT NULL AND z."Дата проверки" IS NULL;
+                ''',
+                (worker_id,)
+            )
+            tasks_to_check = cur.fetchall()
+    except Exception as e:
+        print("Ошибка при загрузке данных для мастера:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template(
+        'dashboard_master.html',
+        tasks_to_check=tasks_to_check,
+        worker_name=session.get('worker_name', 'Мастер')
+    )
+
+@app.route('/mark_task_checked/<int:task_id>', methods=['POST'])
+def mark_task_checked(task_id):
+    """Отметить заявку как проверенную мастером."""
+    if 'worker_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            # Обновление заявки, добавление даты проверки
+            cur.execute(
+                '''
+                UPDATE public."Заявка"
+                SET "Дата проверки" = CURRENT_DATE
+                WHERE "Номер заявки" = %s;
+                ''',
+                (task_id,)
+            )
+            conn.commit()
+    except Exception as e:
+        print("Ошибка при обновлении заявки:", e)
+        return "Ошибка при обновлении данных", 500
+    finally:
+        conn.close()
+
+    return redirect(url_for('dashboard_master'))
 
 
 

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дашборд мастера</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/cars.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Дашборд мастера</h1>
+            <p>Привет, {{ worker_name }}!</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard_master') }}">Задачи для проверки</a></li>
+                <li><a href="{{ url_for('logout') }}">Выйти</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section>
+                <h2>Задачи для проверки</h2>
+                {% if tasks_to_check %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Номер заявки</th>
+                                <th>Дата</th>
+                                <th>Тип услуги</th>
+                                <th>Клиент</th>
+                                <th>Гарантия</th>
+                                <th>Дата выполнения</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks_to_check %}
+                                <tr>
+                                    <td>{{ task[0] }}</td>
+                                    <td>{{ task[1] }}</td>
+                                    <td>{{ task[2] }}</td>
+                                    <td>{{ task[3] }}</td>
+                                    <td>{{ 'Да' if task[4] else 'Нет' }}</td>
+                                    <td>{{ task[5] }}</td>
+                                    <td>
+                                        <form action="{{ url_for('mark_task_checked', task_id=task[0]) }}" method="post">
+                                            <button type="submit">Отметить как проверенную</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>Нет заявок для проверки.</p>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>
