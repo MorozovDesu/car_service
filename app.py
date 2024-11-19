@@ -646,6 +646,38 @@ def mark_task_checked(task_id):
 
     return redirect(url_for('dashboard_master'))
 
+@app.route('/checked_tasks', methods=['GET'])
+def checked_tasks():
+    """Отображение всех проверенных заявок."""
+    if 'worker_id' not in session:
+        return redirect(url_for('login'))
+
+    worker_id = session['worker_id']
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            # Получение проверенных заявок мастера
+            cur.execute(
+                '''
+                SELECT z."Номер заявки", z."Дата", u."Тип услуги", c."ФИО", 
+                       z."Гарантия", z."Дата выполнения", z."Дата проверки"
+                FROM public."Заявка" z
+                JOIN public."Услуга" u ON z."ID услуги" = u."ID услуги"
+                JOIN public."Клиент" c ON z."ID Клиента" = c."ID клиента"
+                WHERE z."Дата проверки" IS NOT NULL;
+                '''
+            )
+            checked_tasks = cur.fetchall()
+    except Exception as e:
+        print("Ошибка при загрузке проверенных заявок:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template('checked_tasks.html', checked_tasks=checked_tasks)
 
 
 
