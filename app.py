@@ -113,69 +113,7 @@ def search():
         user=session.get('user_name', 'Пользователь')
     )
 
-# 
-@app.route('/applications', methods=['GET'])
-def applications():
-    """Страница заявок."""
-    # Проверяем авторизацию
-    if 'client_id' not in session:
-        return redirect(url_for('login'))
 
-    client_id = session['client_id']
-    page = request.args.get('page', 1, type=int)
-    per_page = 10
-
-    # Получаем заявки с названиями услуг
-    applications = get_applications_for_client(client_id, page, per_page)
-
-    return render_template(
-        'applications.html',
-        applications=applications,
-        page=page,
-        user=session.get('user_name', 'Пользователь')
-    )
-# 
-
-@app.route('/applications/delete/<int:application_id>', methods=['POST'])
-def delete_application(application_id):
-    """Удаление заявки по ее номеру."""
-    if 'client_id' not in session:
-        return redirect(url_for('login'))
-
-    conn = connect_db()
-    if conn is None:
-        return "Ошибка подключения к базе данных", 500
-
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                '''
-                DELETE FROM public."Заявка"
-                WHERE "Номер заявки" = %s AND "ID Клиента" = %s;
-                ''',
-                (application_id, session['client_id'])
-            )
-            conn.commit()
-    except Exception as e:
-        print("Ошибка при удалении заявки:", e)
-        conn.rollback()
-        return "Ошибка при удалении заявки", 500
-    finally:
-        conn.close()
-
-    return redirect(url_for('applications'))
-
-@app.route('/applications/delete/<int:application_number>', methods=['POST'])
-def delete_application_route(application_number):
-    """Обработчик для удаления заявки."""
-    if 'client_id' not in session:
-        return redirect(url_for('login'))
-
-    if delete_application(application_number):
-        return redirect(url_for('applications'))  # Редирект на страницу с заявками
-    else:
-        return "Ошибка при удалении заявки", 500
-    
 @app.route('/cars')
 def cars():
     """Страница с информацией об автомобилях клиента."""
@@ -214,7 +152,6 @@ def delete_car(car_number):
         return "Ошибка при удалении автомобиля", 500
     finally:
         conn.close()
-
 
 @app.route('/cars/add', methods=['GET', 'POST'])
 def add_car():
@@ -269,6 +206,74 @@ def add_car():
 
     # Отображаем форму с выбором модели
     return render_template('add_car.html', models=[row[0] for row in models])
+
+
+@app.route('/cars/edit/<car_number>', methods=['GET', 'POST'])
+def edit_car(car_number):
+    """Страница для редактирования информации об автомобиле."""
+    
+    if not car_number:
+        return "Ошибка: Номер автомобиля не указан", 400
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    if request.method == 'POST':
+        # Получение данных из формы
+        car_name = request.form.get('car_name')
+        car_brand = request.form.get('car_brand')
+        model = request.form.get('model')
+
+        try:
+            with conn.cursor() as cur:
+                # Обновляем данные автомобиля
+                cur.execute(
+                    '''
+                    UPDATE public."Карточка автомобиля"
+                    SET "Название" = %s, "Марка" = %s, "Модель" = %s
+                    WHERE "Номер автомобиля" = %s;
+                    ''',
+                    (car_name, car_brand, model, car_number)
+                )
+                conn.commit()
+            return redirect(url_for('cars'))
+        except Exception as e:
+            print("Ошибка при редактировании автомобиля:", e)
+            conn.rollback()
+            return "Ошибка при редактировании автомобиля", 500
+        finally:
+            conn.close()
+
+    # Если метод GET, подгружаем текущие данные автомобиля
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''
+                SELECT "Номер автомобиля", "Название", "Марка", "Модель"
+                FROM public."Карточка автомобиля"
+                WHERE "Номер автомобиля" = %s;
+                ''',
+                (car_number,)
+            )
+            car = cur.fetchone()
+
+            # Получаем список моделей для выбора
+            cur.execute('SELECT DISTINCT "Модель" FROM public."Модель автомобиля";')
+            models = [row[0] for row in cur.fetchall()]
+    except Exception as e:
+        print("Ошибка при загрузке данных автомобиля:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template(
+        'edit_car.html',
+        car=car,
+        models=models
+    )
 
 @app.route('/applications/add', methods=['GET', 'POST'])
 def add_application():
@@ -389,19 +394,32 @@ def edit_application(application_id):
         return "Ошибка при редактировании заявки", 500
     finally:
         conn.close()
+# 
+@app.route('/applications', methods=['GET'])
+def applications():
+    """Страница заявок."""
+    # Проверяем авторизацию
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
 
+    client_id = session['client_id']
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
 
+    # Получаем заявки с названиями услуг
+    applications = get_applications_for_client(client_id, page, per_page)
 
+    return render_template(
+        'applications.html',
+        applications=applications,
+        page=page,
+        user=session.get('user_name', 'Пользователь')
+    )
+# 
 
-
-
-
-@app.route('/cars/edit/<car_number>', methods=['GET', 'POST'])
-def edit_car(car_number):
-    """Страница для редактирования информации об автомобиле."""
-    
-    if not car_number:
-        return "Ошибка: Номер автомобиля не указан", 400
+@app.route('/applications/delete/<int:application_id>', methods=['POST'])
+def delete_application(application_id):
+    """Удаление заявки по ее номеру."""
     if 'client_id' not in session:
         return redirect(url_for('login'))
 
@@ -409,59 +427,54 @@ def edit_car(car_number):
     if conn is None:
         return "Ошибка подключения к базе данных", 500
 
-    if request.method == 'POST':
-        # Получение данных из формы
-        car_name = request.form.get('car_name')
-        car_brand = request.form.get('car_brand')
-        model = request.form.get('model')
-
-        try:
-            with conn.cursor() as cur:
-                # Обновляем данные автомобиля
-                cur.execute(
-                    '''
-                    UPDATE public."Карточка автомобиля"
-                    SET "Название" = %s, "Марка" = %s, "Модель" = %s
-                    WHERE "Номер автомобиля" = %s;
-                    ''',
-                    (car_name, car_brand, model, car_number)
-                )
-                conn.commit()
-            return redirect(url_for('cars'))
-        except Exception as e:
-            print("Ошибка при редактировании автомобиля:", e)
-            conn.rollback()
-            return "Ошибка при редактировании автомобиля", 500
-        finally:
-            conn.close()
-
-    # Если метод GET, подгружаем текущие данные автомобиля
     try:
         with conn.cursor() as cur:
             cur.execute(
                 '''
-                SELECT "Номер автомобиля", "Название", "Марка", "Модель"
-                FROM public."Карточка автомобиля"
-                WHERE "Номер автомобиля" = %s;
+                DELETE FROM public."Заявка"
+                WHERE "Номер заявки" = %s AND "ID Клиента" = %s;
                 ''',
-                (car_number,)
+                (application_id, session['client_id'])
             )
-            car = cur.fetchone()
-
-            # Получаем список моделей для выбора
-            cur.execute('SELECT DISTINCT "Модель" FROM public."Модель автомобиля";')
-            models = [row[0] for row in cur.fetchall()]
+            conn.commit()
     except Exception as e:
-        print("Ошибка при загрузке данных автомобиля:", e)
-        return "Ошибка при загрузке данных", 500
+        print("Ошибка при удалении заявки:", e)
+        conn.rollback()
+        return "Ошибка при удалении заявки", 500
     finally:
         conn.close()
 
-    return render_template(
-        'edit_car.html',
-        car=car,
-        models=models
-    )
+    return redirect(url_for('applications'))
+
+@app.route('/applications/delete/<int:application_number>', methods=['POST'])
+def delete_application_route(application_number):
+    """Обработчик для удаления заявки."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    if delete_application(application_number):
+        return redirect(url_for('applications'))  # Редирект на страницу с заявками
+    else:
+        return "Ошибка при удалении заявки", 500
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
