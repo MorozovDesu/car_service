@@ -396,6 +396,74 @@ def edit_application(application_id):
 
 
 
+@app.route('/cars/edit/<car_number>', methods=['GET', 'POST'])
+def edit_car(car_number):
+    """Страница для редактирования информации об автомобиле."""
+    
+    if not car_number:
+        return "Ошибка: Номер автомобиля не указан", 400
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    if request.method == 'POST':
+        # Получение данных из формы
+        car_name = request.form.get('car_name')
+        car_brand = request.form.get('car_brand')
+        model = request.form.get('model')
+
+        try:
+            with conn.cursor() as cur:
+                # Обновляем данные автомобиля
+                cur.execute(
+                    '''
+                    UPDATE public."Карточка автомобиля"
+                    SET "Название" = %s, "Марка" = %s, "Модель" = %s
+                    WHERE "Номер автомобиля" = %s;
+                    ''',
+                    (car_name, car_brand, model, car_number)
+                )
+                conn.commit()
+            return redirect(url_for('cars'))
+        except Exception as e:
+            print("Ошибка при редактировании автомобиля:", e)
+            conn.rollback()
+            return "Ошибка при редактировании автомобиля", 500
+        finally:
+            conn.close()
+
+    # Если метод GET, подгружаем текущие данные автомобиля
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                '''
+                SELECT "Номер автомобиля", "Название", "Марка", "Модель"
+                FROM public."Карточка автомобиля"
+                WHERE "Номер автомобиля" = %s;
+                ''',
+                (car_number,)
+            )
+            car = cur.fetchone()
+
+            # Получаем список моделей для выбора
+            cur.execute('SELECT DISTINCT "Модель" FROM public."Модель автомобиля";')
+            models = [row[0] for row in cur.fetchall()]
+    except Exception as e:
+        print("Ошибка при загрузке данных автомобиля:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template(
+        'edit_car.html',
+        car=car,
+        models=models
+    )
+
+
 
 
 if __name__ == '__main__':

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактировать машину</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/add_cars.css') }}">
+</head>
+<body>
+    <div class="content">
+        <h1>Редактировать машину</h1>
+        <form method="POST">
+            <div class="form-group">
+                <label for="car_name">Название:</label>
+                <input type="text" id="car_name" name="car_name" value="{{ car['Название'] }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="car_brand">Марка:</label>
+                <input type="text" id="car_brand" name="car_brand" value="{{ car['Марка'] }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="model">Модель:</label>
+                <select id="model" name="model" required>
+                    {% for model in models %}
+                        <option value="{{ model }}" {% if model == car['Модель'] %}selected{% endif %}>
+                            {{ model }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit">Сохранить изменения</button>
+            <button onclick="window.history.back();">Назад</button>
+        </form>
+    </div>
+</body>
+</html>
