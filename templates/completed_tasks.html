@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выполненные заявки</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/cars.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard_worker') }}">Заявка</a></li>
+            <li><a href="{{ url_for('completed_tasks') }}">Выполненные заявки</a></li>
+            <li><a href="{{ url_for('logout') }}">Выход</a></li>
+        </ul>
+    </nav>
+
+    <div class="content">
+        <h1>Выполненные заявки</h1>
+        
+        {% if completed_tasks %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Номер заявки</th>
+                        <th>Дата</th>
+                        <th>Услуга</th>
+                        <th>Клиент</th>
+                        <th>Гарантия</th>
+                        <th>Дата выполнения</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in completed_tasks %}
+                        <tr>
+                            <td>{{ task[0] }}</td>
+                            <td>{{ task[1] }}</td>
+                            <td>{{ task[2] }}</td>
+                            <td>{{ task[3] }}</td>
+                            <td>{{ task[4] }}</td>
+                            <td>{{ task[5] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Нет выполненных заявок.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

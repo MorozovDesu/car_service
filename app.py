@@ -451,32 +451,70 @@ def delete_application_route(application_number):
         return "Ошибка при удалении заявки", 500
 #/////////////////////////////////////////////////////////Обработка работника
 
-@app.route('/tasks/completed/<int:task_id>', methods=['POST'])
-def mark_task_completed(task_id):
-    """Отметить заявку как выполненную."""
+@app.route('/dashboard/worker/completed', methods=['GET'])
+def completed_tasks():
+    """Дашборд для выполненных заявок."""
     if 'worker_id' not in session:
         return redirect(url_for('login'))
 
+    worker_id = session['worker_id']
     conn = connect_db()
     if conn is None:
         return "Ошибка подключения к базе данных", 500
 
     try:
         with conn.cursor() as cur:
-            # Обновляем дату выполнения заявки
+            # Получение выполненных заявок
+            cur.execute(
+                '''
+                SELECT z."Номер заявки", z."Дата", u."Тип услуги", c."ФИО", z."Гарантия", z."Дата выполнения"
+                FROM public."Заявка" z
+                JOIN public."Услуга" u ON z."ID услуги" = u."ID услуги"
+                JOIN public."Клиент" c ON z."ID Клиента" = c."ID клиента"
+                WHERE z."ID выполняющего работы" = %s AND z."Дата выполнения" IS NOT NULL;
+                ''',
+                (worker_id,)
+            )
+            completed_tasks = cur.fetchall()
+    except Exception as e:
+        print("Ошибка при загрузке выполненных заявок:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    # Отображение шаблона с выполненными заявками
+    return render_template(
+        'completed_tasks.html',
+        completed_tasks=completed_tasks,
+        worker_name=session.get('worker_name', 'Исполнитель')
+    )
+
+@app.route('/mark_task_completed/<int:task_id>', methods=['POST'])
+def mark_task_completed(task_id):
+    """Отметить заявку как выполненную."""
+    if 'worker_id' not in session:
+        return redirect(url_for('login'))
+
+    worker_id = session['worker_id']
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            # Обновление заявки, добавление даты выполнения
             cur.execute(
                 '''
                 UPDATE public."Заявка"
                 SET "Дата выполнения" = CURRENT_DATE
-                WHERE "Номер заявки" = %s AND "ID выполняющего работы" = %s AND "Дата выполнения" IS NULL;
+                WHERE "Номер заявки" = %s AND "ID выполняющего работы" = %s;
                 ''',
-                (task_id, session['worker_id'])
+                (task_id, worker_id)
             )
             conn.commit()
     except Exception as e:
-        print("Ошибка при отметке заявки как выполненной:", e)
-        conn.rollback()
-        return "Ошибка при обновлении заявки", 500
+        print("Ошибка при обновлении заявки:", e)
+        return "Ошибка при обновлении данных", 500
     finally:
         conn.close()
 
@@ -531,6 +569,8 @@ def dashboard_worker():
         completed_tasks_count=completed_tasks_count,
         worker_name=session.get('worker_name', 'Исполнитель')
     )
+
+
 
 
 

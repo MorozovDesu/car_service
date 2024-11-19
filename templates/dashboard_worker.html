@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дашборд исполнителя</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/cars.css') }}">
 </head>
+
 <body>
     <nav>
         <ul>
-            <li><a href="{{ url_for('dashboard_worker') }}">Дашборд</a></li>
+            <li><a href="{{ url_for('dashboard_worker') }}">Заявка</a></li>
+            <li><a href="{{ url_for('completed_tasks') }}">Выполненные заявки</a></li>
             <li><a href="{{ url_for('logout') }}">Выход</a></li>
         </ul>
     </nav>
@@ -20,41 +23,48 @@
         <div class="stats">
             <h2>Статистика</h2>
             <p>Выполнено заявок: {{ completed_tasks_count }}</p>
+            <form action="{{ url_for('completed_tasks') }}" method="GET">
+                <button type="submit">Показать выполненные заявки</button>
+
+            </form>
         </div>
 
         <div class="tasks">
             <h2>Заявки на выполнение</h2>
             {% if tasks_to_complete %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Номер заявки</th>
-                            <th>Услуга</th>
-                            <th>Клиент</th>
-                            <th>Гарантия</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for task in tasks_to_complete %}
-                            <tr>
-                                <td>{{ task[0] }}</td>
-                                <td>{{ task[2] }}</td>
-                                <td>{{ task[3] }}</td>
-                                <td>{{ 'Да' if task[4] == 'true' else 'Нет' }}</td>
-                                <td>
-                                    <form action="{{ url_for('mark_task_completed', task_id=task[0]) }}" method="POST">
-                                        <button type="submit">Выполнил</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Номер заявки</th>
+                        <th>Услуга</th>
+                        <th>Клиент</th>
+                        <th>Гарантия</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks_to_complete %}
+                    <tr>
+                        <td>{{ task[0] }}</td>
+                        <td>{{ task[2] }}</td>
+                        <td>{{ task[3] }}</td>
+                        <td>{{ 'Да' if task[4] == 'true' else 'Нет' }}</td>
+                        <td>
+                            <form action="{{ url_for('mark_task_completed', task_id=task[0]) }}" method="POST">
+                                <button type="submit">Выполнил</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             {% else %}
-                <p>Нет заявок на выполнение.</p>
+            <p>Нет заявок на выполнение.</p>
             {% endif %}
+
+        
         </div>
     </div>
 </body>
+
 </html>
