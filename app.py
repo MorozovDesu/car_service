@@ -326,6 +326,69 @@ def add_application():
     # Отображаем форму с услугами
     return render_template('add_application.html', services=services)
 
+from datetime import datetime
+
+@app.route('/applications/edit/<int:application_id>', methods=['GET', 'POST'])
+def edit_application(application_id):
+    """Редактирование заявки."""
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        if request.method == 'POST':
+            # Обновление заявки
+            service_id = request.form.get('service_id')
+            warranty = request.form.get('warranty') == 'true'
+            date = request.form.get('date')
+
+            with conn.cursor() as cur:
+                cur.execute('''
+                    UPDATE public."Заявка"
+                    SET "ID услуги" = %s, "Гарантия" = %s, "Дата" = %s
+                    WHERE "Номер заявки" = %s;
+                ''', (service_id, warranty, date, application_id))
+                conn.commit()
+            return redirect(url_for('applications'))
+
+        # Получение данных заявки для отображения в форме
+        with conn.cursor() as cur:
+            cur.execute('''
+                SELECT z."Номер заявки", z."ID услуги", z."Гарантия", z."Дата", u."Тип услуги"
+                FROM public."Заявка" z
+                JOIN public."Услуга" u ON z."ID услуги" = u."ID услуги"
+                WHERE z."Номер заявки" = %s;
+            ''', (application_id,))
+            application = cur.fetchone()
+
+            if not application:
+                return "Заявка не найдена", 404
+
+            cur.execute('SELECT "ID услуги", "Тип услуги" FROM public."Услуга";')
+            services = cur.fetchall()
+
+        # Форматируем дату для передачи в шаблон
+        formatted_date = application[3].strftime('%Y-%m-%d') if application[3] else ''
+
+        return render_template(
+            'edit_application.html',
+            application={
+                "Номер заявки": application[0],
+                "ID услуги": application[1],
+                "Гарантия": application[2],
+                "Дата": formatted_date,  # Форматированная дата
+                "Тип услуги": application[4]
+            },
+            services=services
+        )
+    except Exception as e:
+        print("Ошибка при редактировании заявки:", e)
+        return "Ошибка при редактировании заявки", 500
+    finally:
+        conn.close()
 
 
 

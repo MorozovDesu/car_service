@@ -44,6 +44,9 @@
                         <td>{{ application['Гарантия'] }}</td>
                         <td>{{ application['Дата'] }}</td>
                         <td>
+                            <a href="{{ url_for('edit_application', application_id=application['Номер заявки']) }}">
+                                <button type="button">Редактировать</button>
+                            </a>
                             <form action="{{ url_for('delete_application', application_id=application['Номер заявки']) }}" method="POST">
                                 <button type="submit" onclick="return confirm('Удалить заявку?')">Удалить</button>
                             </form>

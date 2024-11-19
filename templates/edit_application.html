@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактировать заявку</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/add_application.css') }}">
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">Главная</a></li>
+            <li><a href="{{ url_for('applications') }}">Заявки</a></li>
+            <li><a href="{{ url_for('logout') }}">Выход</a></li>
+        </ul>
+    </nav>
+
+    <div class="content">
+        <h1>Редактировать заявку</h1>
+
+        <form action="{{ url_for('edit_application', application_id=application['Номер заявки']) }}" method="POST">
+            <label for="service_id">Услуга:</label>
+            <select name="service_id" id="service_id" required>
+                {% for service in services %}
+                <option value="{{ service[0] }}" {% if service[0] == application['ID услуги'] %}selected{% endif %}>
+                    {{ service[1] }}
+                </option>
+                {% endfor %}
+            </select>
+            <br><br>
+
+            <label for="warranty">Гарантия:</label>
+            <label>
+                <input type="radio" name="warranty" value="true" {% if application['Гарантия'] %}checked{% endif %}> Да
+            </label>
+            <label>
+                <input type="radio" name="warranty" value="false" {% if not application['Гарантия'] %}checked{% endif %}> Нет
+            </label>
+            <br>
+
+            <label for="date">Дата:</label>
+            <input type="date" id="date" name="date" value="{{ application['Дата'] }}" required style="width: auto; max-width: 500px;">
+
+            <button type="submit">Сохранить изменения</button>
+        </form>
+    </div>
+</body>
+
+</html>
