@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сотрудники</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin.css') }}">
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard_admin', page=1) }}">Все заявки</a></li>
+            <li><a href="{{ url_for('dashboard_workers') }}">Сотрудники</a></li>
+            <li><a href="#clients">Клиенты</a></li>
+            <li><a href="{{ url_for('logout') }}">Выход</a></li>
+        </ul>
+    </nav>
+    <div class="content">
+        <header>
+            <h1>Список сотрудников</h1>
+        </header>
+        <div class="header-actions">
+            <a href="{{ url_for('add_worker') }}" class="btn">Добавить сотрудника</a>
+        </div>
+
+
+        <!-- Ссылки для сортировки -->
+        <div class="sort-options">
+            <span>Сортировать по:</span>
+            <a href="{{ url_for('dashboard_workers', sort='ID работника') }}"
+                class="{{ 'active' if sort_by == 'ID работника' else '' }}">
+                ID
+            </a>
+            |
+            <a href="{{ url_for('dashboard_workers', sort='ФИО') }}" class="{{ 'active' if sort_by == 'ФИО' else '' }}">
+                Имя (ФИО)
+            </a>
+        </div>
+
+        <!-- Таблица сотрудников -->
+        {% if workers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ФИО</th>
+                    <th>Должность</th>
+                    <th>Email</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for worker in workers %}
+                <tr>
+                    <td>{{ worker[0] }}</td>
+                    <td>{{ worker[1] }}</td>
+                    <td>{{ worker[2] }}</td>
+                    <td>{{ worker[3] }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_worker', worker_id=worker[0]) }}"  class="btn edit-btn">
+                            Редактировать
+                        </a>
+                        <form action="{{ url_for('delete_worker', worker_id=worker[0]) }}" method="POST">
+                            <button type="submit" class="btn edit-btn" style="width: 150px;">
+                                Удалить
+                            </button>
+                        </form>
+                        
+                    </td>
+                    
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>Нет сотрудников для отображения.</p>
+        {% endif %}
+    </div>
+</body>
+
+</html>

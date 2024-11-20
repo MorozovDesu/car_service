@@ -733,6 +733,175 @@ def dashboard_admin():
         total_pages=total_pages
     )
 
+@app.route('/dashboard/workers', methods=['GET'])
+def dashboard_workers():
+    """Отображение страницы с сотрудниками с возможностью сортировки."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    # Получение параметра сортировки из запроса
+    sort_by = request.args.get('sort', 'ID работника')  # По умолчанию сортировка по ID
+    valid_sort_columns = ['ID работника', 'ФИО']
+    if sort_by not in valid_sort_columns:
+        sort_by = 'ID работника'
+
+    try:
+        with conn.cursor() as cur:
+            # Получение списка сотрудников с сортировкой
+            query = f'''
+                SELECT "ID работника", "ФИО", "Должность", "Email"
+                FROM public."Работник"
+                ORDER BY "{sort_by}";
+            '''
+            cur.execute(query)
+            workers = cur.fetchall()
+    except Exception as e:
+        print("Ошибка при загрузке данных о сотрудниках:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template(
+        'dashboard_workers.html',  # Шаблон для отображения сотрудников
+        workers=workers,
+        sort_by=sort_by
+    )
+
+@app.route('/dashboard/workers/add', methods=['GET', 'POST'])
+def add_worker():
+    """Форма для добавления нового сотрудника."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        fio = request.form.get('fio')
+        position = request.form.get('position')
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        if not all([fio, position, email, password]):
+            return render_template('add_worker.html', error="Все поля обязательны для заполнения.")
+
+        conn = connect_db()
+        if conn is None:
+            return "Ошибка подключения к базе данных", 500
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute('''
+                    INSERT INTO public."Работник" ("ФИО", "Должность", "Email", "Пароль")
+                    VALUES (%s, %s, %s, %s);
+                ''', (fio, position, email, password))
+                conn.commit()
+        except Exception as e:
+            print("Ошибка при добавлении сотрудника:", e)
+            return render_template('add_worker.html', error="Ошибка при добавлении сотрудника.")
+        finally:
+            conn.close()
+
+        return redirect(url_for('dashboard_workers'))
+
+    return render_template('add_worker.html')
+
+@app.route('/edit_worker/<int:worker_id>', methods=['GET', 'POST'])
+def edit_worker(worker_id):
+    """Редактирование данных сотрудника."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    if request.method == 'POST':
+        fio = request.form['fio']
+        position = request.form['position']
+        email = request.form['email']
+        password = request.form['password']  # Может быть пустым
+
+        try:
+            with conn.cursor() as cur:
+                # Обновляем основные данные
+                cur.execute('''
+                    UPDATE public."Работник"
+                    SET "ФИО" = %s, "Должность" = %s, "Email" = %s
+                    WHERE "ID работника" = %s;
+                ''', (fio, position, email, worker_id))
+                
+                # Если пароль введён, обновляем его без хеширования
+                if password:
+                    cur.execute('''
+                        UPDATE public."Работник"
+                        SET "Пароль" = %s
+                        WHERE "ID работника" = %s;
+                    ''', (password, worker_id))
+                
+                conn.commit()
+            return redirect(url_for('dashboard_workers'))
+        except Exception as e:
+            print("Ошибка при редактировании сотрудника:", e)
+            return render_template('edit_worker.html', worker=None, error="Ошибка сохранения изменений.")
+        finally:
+            conn.close()
+
+    # Загрузка данных сотрудника для редактирования
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM public."Работник" WHERE "ID работника" = %s;', (worker_id,))
+            worker = cur.fetchone()
+        if worker is None:
+            return "Сотрудник не найден", 404
+    except Exception as e:
+        print("Ошибка при загрузке данных сотрудника:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template('edit_worker.html', worker=worker)
+
+@app.route('/delete_worker/<int:worker_id>', methods=['POST'], endpoint='delete_worker')
+def delete_worker(worker_id):
+    """Удаление сотрудника."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
+
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            # Удаляем сотрудника из базы данных по ID
+            cur.execute('DELETE FROM public."Работник" WHERE "ID работника" = %s;', (worker_id,))
+            conn.commit()
+    except Exception as e:
+        print("Ошибка при удалении сотрудника:", e)
+        return "Ошибка при удалении сотрудника", 500
+    finally:
+        conn.close()
+
+    return redirect(url_for('dashboard_workers'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

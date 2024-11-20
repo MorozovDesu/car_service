@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить сотрудника</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/add_cars.css') }}">
+</head>
+<body>
+    <div class="content">
+        <header>
+            <h1>Добавление нового сотрудника</h1>
+        </header>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        <form action="{{ url_for('add_worker') }}" method="POST">
+            <div class="form-group">
+                <label for="fio">ФИО:</label>
+                <input type="text" id="fio" name="fio" required>
+            </div>
+            <div class="form-group">
+                <label for="position">Должность:</label>
+                <select id="position" name="position" required>
+                    <option value="Мастер">Мастер</option>
+                    <option value="Слесарь">Слесарь</option>
+                    <option value="Администратор">Администратор</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn">Добавить сотрудника</button>
+        </form>
+        <a href="{{ url_for('dashboard_workers') }}" class="btn">Назад к списку</a>
+    </div>
+</body>
+</html>
