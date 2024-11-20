@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дашборд администратора</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/cars.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard_admin', page=1) }}">Все заявки</a></li>
+            <li><a href="#workers">Сотрудники</a></li>
+            <li><a href="#clients">Клиенты</a></li>
+            <li><a href="{{ url_for('logout') }}">Выход</a></li>
+        </ul>
+    </nav>
+    <div class="content">
+        <header>
+            <h1>Дашборд администратора</h1>
+        </header>
+
+        <!-- Раздел заявок -->
+        <section id="tasks">
+            <h2>Все заявки</h2>
+            {% if tasks %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Номер заявки</th>
+                        <th>Дата</th>
+                        <th>Тип услуги</th>
+                        <th>Клиент</th>
+                        <th>Авто</th>
+                        <th>Гарантия</th>
+                        <th>Дата выполнения</th>
+                        <th>Проверяющий</th>
+                        <th>Исполнитель</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task[0] }}</td>
+                        <td>{{ task[1] }}</td>
+                        <td>{{ task[2] }}</td>
+                        <td>{{ task[3] }}</td>
+                        <td>{{ task[4] }}</td>
+                        <td>{{ 'Да' if task[5] else 'Нет' }}</td>
+                        <td>{{ task[6] or 'Не выполнено' }}</td>
+                        <td>{{ task[7] or 'Не назначен' }}</td>
+                        <td>{{ task[8] or 'Неизвестно' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Нет заявок.</p>
+            {% endif %}
+
+            <!-- Навигация по страницам -->
+            <div class="pagination">
+                {% if page > 1 %}
+                <a href="{{ url_for('dashboard_admin', page=page-1) }}" class="btn">Предыдущая</a>
+                {% endif %}
+                <span>Страница {{ page }} из {{ total_pages }}</span>
+                {% if page < total_pages %}
+                <a href="{{ url_for('dashboard_admin', page=page+1) }}" class="btn">Следующая</a>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</body>
+</html>

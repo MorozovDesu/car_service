@@ -42,8 +42,8 @@ def login():
                 return redirect(url_for('dashboard_worker'))  # Слесарь
             elif worker['Должность'] == 'Мастер':
                 return redirect(url_for('dashboard_master'))  # Мастер
-            # elif worker['Должность'] == 'Администратор':
-            #     return redirect(url_for('dashboard_admin'))  # Администратор
+            elif worker['Должность'] == 'Администратор':
+                return redirect(url_for('dashboard_admin'))  # Администратор
 
         # Если ни клиент, ни работник не найдены
         return render_template('login.html', error="Неверные данные для входа")
@@ -678,6 +678,61 @@ def checked_tasks():
         conn.close()
 
     return render_template('checked_tasks.html', checked_tasks=checked_tasks)
+#/////////////////////////////////////////////////////////Обработка администратора
+@app.route('/dashboard/admin', methods=['GET'])
+def dashboard_admin():
+    """Дашборд для администратора."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
+
+    admin_name = session.get('worker_name', 'Администратор')
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    # Количество заявок на страницу
+    per_page = 10
+    # Текущая страница (по умолчанию 1)
+    page = request.args.get('page', 1, type=int)
+    offset = (page - 1) * per_page
+
+    try:
+        with conn.cursor() as cur:
+            # Подсчёт общего количества заявок для пагинации
+            cur.execute('SELECT COUNT(*) FROM public."Заявка";')
+            total_tasks = cur.fetchone()[0]
+
+            # Расчёт общего числа страниц
+            total_pages = (total_tasks + per_page - 1) // per_page
+
+            # Получение заявок с учётом пагинации
+            cur.execute('''
+                SELECT z."Номер заявки", z."Дата", u."Тип услуги", c."ФИО" AS "Клиент",
+                       z."Гарантия", z."Дата выполнения", r1."ФИО" AS "Проверяющий",
+                       r2."ФИО" AS "Исполнитель"
+                FROM public."Заявка" z
+                JOIN public."Услуга" u ON z."ID услуги" = u."ID услуги"
+                JOIN public."Клиент" c ON z."ID Клиента" = c."ID клиента"
+                LEFT JOIN public."Работник" r1 ON z."ID проверяющего" = r1."ID работника"
+                LEFT JOIN public."Работник" r2 ON z."ID выполняющего работы" = r2."ID работника"
+                ORDER BY z."Дата" DESC
+                LIMIT %s OFFSET %s;
+            ''', (per_page, offset))
+            tasks = cur.fetchall()
+    except Exception as e:
+        print("Ошибка при загрузке данных для администратора:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template(
+        'dashboard_admin.html',
+        tasks=tasks,
+        admin_name=admin_name,
+        page=page,
+        total_pages=total_pages
+    )
+
 
 
 
