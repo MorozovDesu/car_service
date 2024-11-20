@@ -681,7 +681,7 @@ def checked_tasks():
 #/////////////////////////////////////////////////////////Обработка администратора
 @app.route('/dashboard/admin', methods=['GET'])
 def dashboard_admin():
-    """Дашборд для администратора."""
+    """Дашборд для администратора с информацией о клиентах и их автомобилях."""
     if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
         return redirect(url_for('login'))
 
@@ -690,29 +690,29 @@ def dashboard_admin():
     if conn is None:
         return "Ошибка подключения к базе данных", 500
 
-    # Количество заявок на страницу
-    per_page = 10
-    # Текущая страница (по умолчанию 1)
+    per_page = 10  # Количество заявок на странице
     page = request.args.get('page', 1, type=int)
     offset = (page - 1) * per_page
 
     try:
         with conn.cursor() as cur:
-            # Подсчёт общего количества заявок для пагинации
+            # Подсчёт общего количества заявок
             cur.execute('SELECT COUNT(*) FROM public."Заявка";')
             total_tasks = cur.fetchone()[0]
 
-            # Расчёт общего числа страниц
+            # Расчёт количества страниц
             total_pages = (total_tasks + per_page - 1) // per_page
 
-            # Получение заявок с учётом пагинации
+            # Получение данных о заявках с автомобилями
             cur.execute('''
                 SELECT z."Номер заявки", z."Дата", u."Тип услуги", c."ФИО" AS "Клиент",
-                       z."Гарантия", z."Дата выполнения", r1."ФИО" AS "Проверяющий",
-                       r2."ФИО" AS "Исполнитель"
+                       a."Марка", a."Модель", a."Номер автомобиля",
+                       z."Гарантия", z."Дата выполнения",
+                       r1."ФИО" AS "Проверяющий", r2."ФИО" AS "Исполнитель"
                 FROM public."Заявка" z
                 JOIN public."Услуга" u ON z."ID услуги" = u."ID услуги"
                 JOIN public."Клиент" c ON z."ID Клиента" = c."ID клиента"
+                LEFT JOIN public."Карточка автомобиля" a ON c."ID клиента" = a."ID клиента"
                 LEFT JOIN public."Работник" r1 ON z."ID проверяющего" = r1."ID работника"
                 LEFT JOIN public."Работник" r2 ON z."ID выполняющего работы" = r2."ID работника"
                 ORDER BY z."Дата" DESC

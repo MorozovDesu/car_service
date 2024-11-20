@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дашборд администратора</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/cars.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin.css') }}">
 </head>
 <body>
     <nav>
@@ -31,7 +31,9 @@
                         <th>Дата</th>
                         <th>Тип услуги</th>
                         <th>Клиент</th>
-                        <th>Авто</th>
+                        <th>Марка</th>
+                        <th>Модель</th>
+                        <th>Номер автомобиля</th>
                         <th>Гарантия</th>
                         <th>Дата выполнения</th>
                         <th>Проверяющий</th>
@@ -45,15 +47,18 @@
                         <td>{{ task[1] }}</td>
                         <td>{{ task[2] }}</td>
                         <td>{{ task[3] }}</td>
-                        <td>{{ task[4] }}</td>
-                        <td>{{ 'Да' if task[5] else 'Нет' }}</td>
-                        <td>{{ task[6] or 'Не выполнено' }}</td>
-                        <td>{{ task[7] or 'Не назначен' }}</td>
-                        <td>{{ task[8] or 'Неизвестно' }}</td>
+                        <td>{{ task[4] or 'Неизвестно' }}</td>
+                        <td>{{ task[5] or 'Неизвестно' }}</td>
+                        <td>{{ task[6] or 'Неизвестно' }}</td>
+                        <td>{{ 'Да' if task[7] else 'Нет' }}</td>
+                        <td>{{ task[8] or 'Не выполнено' }}</td>
+                        <td>{{ task[9] or 'Не назначен' }}</td>
+                        <td>{{ task[10] or 'Неизвестно' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            
             {% else %}
             <p>Нет заявок.</p>
             {% endif %}
