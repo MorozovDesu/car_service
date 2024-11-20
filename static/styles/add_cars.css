@@ -69,3 +69,18 @@ button:hover {
     background-color: #555;
 }
 
+.password-container {
+    display: flex;          /* Выстраиваем элементы в одну строку */
+    align-items: center;    /* Выравниваем по вертикали */
+    gap: 10px;              /* Добавляем отступ между элементами */
+}
+
+.password-container input {
+    padding: 5px 10px;      /* Немного увеличиваем отступы внутри поля */
+    width: 3000px;           /* Ширина поля пароля */
+}
+
+.password-container button {
+    padding: 5px 15px;      /* Немного увеличиваем отступы внутри кнопки */
+    cursor: pointer;        /* Курсор в виде указателя */
+}

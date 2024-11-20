@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактировать клиента</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/add_cars.css') }}">
+</head>
+<body>
+    <div class="content">
+        <header>
+            <h1>Редактировать информацию о клиенте</h1>
+        </header>
+        <form action="{{ url_for('edit_client', client_id=client[0]) }}" method="POST">
+            <div class="form-group">
+                <label for="fio">ФИО</label>
+                <input type="text" id="fio" name="fio" value="{{ client[1] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ client[2] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="birth_date">Дата рождения</label>
+                <input type="date" id="birth_date" name="birth_date" value="{{ client[3] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Телефон</label>
+                <input type="text" id="phone" name="phone" value="{{ client[4] }}">
+            </div>
+            <label for="password">Пароль</label>
+            <div class="password-container">
+                <input type="password" id="password" name="password" value="{{ client[5] }}">
+                <button type="button" class="show-password-btn" onclick="togglePassword()">👁️</button>
+            </div>
+            <button type="submit" class="btn">Сохранить изменения</button>
+        </form>
+    </div>
+    <script>
+        // Функция для переключения видимости пароля
+        function togglePassword() {
+            var passwordInput = document.getElementById('password');
+            var passwordButton = document.querySelector('.show-password-btn');
+            // Если текущий тип поля 'password', меняем на 'text', чтобы показать пароль
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                passwordButton.textContent = "🙈"; // Изменим иконку на "скрыть"
+            } else {
+                passwordInput.type = "password";
+                passwordButton.textContent = "👁️"; // Иконка "показать"
+            }
+        }
+    </script>
+</body>
+</html>

@@ -13,7 +13,7 @@
         <ul>
             <li><a href="{{ url_for('dashboard_admin', page=1) }}">Все заявки</a></li>
             <li><a href="{{ url_for('dashboard_workers') }}">Сотрудники</a></li>
-            <li><a href="#clients">Клиенты</a></li>
+            <li><a href="{{ url_for('dashboard_admin_clients') }}">Клиенты</a></li>
             <li><a href="{{ url_for('logout') }}">Выход</a></li>
         </ul>
     </nav>

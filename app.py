@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
 from models import connect_db, get_applications_for_client, get_applications_paginated, get_cars_by_client_id, get_client_by_phone, get_clients_paginated,  search_application, search_client
 from models import get_client_by_phone, get_worker_by_email
@@ -7,7 +8,7 @@ from datetime import timedelta
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
-app.secret_key = 'your_secret_key'  # Секретный ключ для работы сессий (измените на ваш)
+app.secret_key = os.urandom(24)  # Секретный ключ для работы сессий 
 app.permanent_session_lifetime = timedelta(days=5)
 
 
@@ -886,39 +887,149 @@ def delete_worker(worker_id):
 
     return redirect(url_for('dashboard_workers'))
 
+@app.route('/admin_clients', methods=['GET'])
+def dashboard_admin_clients():
+    """Отображение списка клиентов с постраничным выводом."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
+    
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    # Количество клиентов на одной странице
+    per_page = 10
+
+    # Получаем текущую страницу (по умолчанию страница 1)
+    page = request.args.get('page', 1, type=int)
+
+    # Рассчитываем смещение
+    offset = (page - 1) * per_page
+
+    sort_by = request.args.get('sort', 'ID клиента')
+    
+    try:
+        with conn.cursor() as cur:
+            # Получаем количество клиентов для вычисления общего числа страниц
+            cur.execute(f'SELECT COUNT(*) FROM public."Клиент";')
+            total_clients = cur.fetchone()[0]
+
+            # Получаем данные клиентов для текущей страницы
+            cur.execute(f'SELECT * FROM public."Клиент" ORDER BY "{sort_by}" LIMIT %s OFFSET %s;', (per_page, offset))
+            clients = cur.fetchall()
+
+            # Рассчитываем количество страниц
+            total_pages = (total_clients // per_page) + (1 if total_clients % per_page > 0 else 0)
+
+    except Exception as e:
+        print("Ошибка при получении данных о клиентах:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
+
+    return render_template('dashboard_admin_clients.html', clients=clients, sort_by=sort_by, page=page, total_pages=total_pages)
 
 
+@app.route('/add_client', methods=['GET', 'POST'])
+def add_client():
+    """Добавление нового клиента."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
 
+    if request.method == 'POST':
+        fio = request.form['fio']
+        email = request.form['email']
+        birth_date = request.form['birth_date']
+        phone = request.form['phone']
+        password = request.form['password']
+        
+        conn = connect_db()
+        if conn is None:
+            return "Ошибка подключения к базе данных", 500
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute('''
+                    INSERT INTO public."Клиент" ("ФИО", "Email", "Дата рождения", "Номер телефона", "Пароль")
+                    VALUES (%s, %s, %s, %s, %s);
+                ''', (fio, email, birth_date, phone, password))
+                conn.commit()
+            return redirect(url_for('dashboard_admin_clients'))
+        except Exception as e:
+            print("Ошибка при добавлении клиента:", e)
+            return "Ошибка при добавлении клиента", 500
+        finally:
+            conn.close()
 
+    return render_template('add_client.html')
 
+@app.route('/edit_client/<int:client_id>', methods=['GET', 'POST'])
+def edit_client(client_id):
+    """Редактирование данных клиента."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
 
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
 
+    if request.method == 'POST':
+        fio = request.form['fio']
+        email = request.form['email']
+        birth_date = request.form['birth_date']
+        phone = request.form['phone']
+        password = request.form['password']
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute('''
+                    UPDATE public."Клиент"
+                    SET "ФИО" = %s, "Email" = %s, "Дата рождения" = %s, "Номер телефона" = %s, "Пароль" = %s
+                    WHERE "ID клиента" = %s;
+                ''', (fio, email, birth_date, phone, password, client_id))
+                conn.commit()
+            return redirect(url_for('dashboard_admin_clients'))
+        except Exception as e:
+            print("Ошибка при редактировании клиента:", e)
+            return "Ошибка при редактировании клиента", 500
+        finally:
+            conn.close()
 
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT * FROM public."Клиент" WHERE "ID клиента" = %s;', (client_id,))
+            client = cur.fetchone()
+        if client is None:
+            return "Клиент не найден", 404
+    except Exception as e:
+        print("Ошибка при загрузке данных клиента:", e)
+        return "Ошибка при загрузке данных", 500
+    finally:
+        conn.close()
 
+    return render_template('edit_client.html', client=client)
 
+@app.route('/delete_client/<int:client_id>', methods=['POST'])
+def delete_client(client_id):
+    """Удаление клиента."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+    
+    try:
+        with conn.cursor() as cur:
+            # Удаляем все заявки, связанные с клиентом
+            cur.execute('DELETE FROM public."Заявка" WHERE "ID Клиента" = %s;', (client_id,))
+            # Теперь удаляем клиента
+            cur.execute('DELETE FROM public."Клиент" WHERE "ID клиента" = %s;', (client_id,))
+        conn.commit()
+        return redirect(url_for('dashboard_admin_clients'))
+    except Exception as e:
+        print("Ошибка при удалении клиента:", e)
+        return "Ошибка при удалении клиента", 500
 
 
 if __name__ == '__main__':
