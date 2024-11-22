@@ -754,7 +754,7 @@ def dashboard_workers():
         with conn.cursor() as cur:
             # Получение списка сотрудников с сортировкой
             query = f'''
-                SELECT "ID работника", "ФИО", "Должность", "Email"
+                SELECT "ID работника", "ФИО", "Должность", "Email", "is_active"
                 FROM public."Работник"
                 ORDER BY "{sort_by}";
             '''
@@ -929,7 +929,6 @@ def dashboard_admin_clients():
 
     return render_template('dashboard_admin_clients.html', clients=clients, sort_by=sort_by, page=page, total_pages=total_pages)
 
-
 @app.route('/add_client', methods=['GET', 'POST'])
 def add_client():
     """Добавление нового клиента."""
@@ -1030,6 +1029,35 @@ def delete_client(client_id):
     except Exception as e:
         print("Ошибка при удалении клиента:", e)
         return "Ошибка при удалении клиента", 500
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+@app.route('/toggle_worker_status/<int:worker_id>', methods=['POST'])
+def toggle_worker_status(worker_id):
+    """Включение/выключение учетной записи работника."""
+    if 'worker_id' not in session or session.get('worker_position') != 'Администратор':
+        return redirect(url_for('login'))
+    
+    conn = connect_db()
+    if conn is None:
+        return "Ошибка подключения к базе данных", 500
+
+    try:
+        with conn.cursor() as cur:
+            # Получаем текущий статус работника
+            cur.execute('SELECT "is_active" FROM public."Работник" WHERE "ID работника" = %s;', (worker_id,))
+            current_status = cur.fetchone()
+            if current_status is None:
+                return "Работник не найден", 404
+
+            # Переключаем статус
+            new_status = not current_status[0]
+            cur.execute('UPDATE public."Работник" SET "is_active" = %s WHERE "ID работника" = %s;', (new_status, worker_id))
+            conn.commit()
+        return redirect(url_for('dashboard_workers'))
+    except Exception as e:
+        print("Ошибка при изменении статуса работника:", e)
+        return "Ошибка при изменении статуса работника", 500
+    finally:
+        conn.close()
 
 
 if __name__ == '__main__':

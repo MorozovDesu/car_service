@@ -61,13 +61,14 @@ def get_worker_by_email(email):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                '''
-                SELECT "ID работника", "ФИО", "Должность", "Пароль", "Email"
-                FROM public."Работник"
-                WHERE "Email" = %s;
-                ''',
-                (email,)
-            )
+            '''
+            SELECT "ID работника", "ФИО", "Должность", "Пароль", "Email", "is_active"
+            FROM public."Работник"
+            WHERE "Email" = %s AND "is_active" = true;
+            ''',
+            (email,)
+        )
+
             row = cur.fetchone()
     except Exception as e:
         print("Ошибка при выполнении запроса:", e)

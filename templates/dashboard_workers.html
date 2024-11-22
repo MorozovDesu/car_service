@@ -59,16 +59,23 @@
                     <td>{{ worker[2] }}</td>
                     <td>{{ worker[3] }}</td>
                     <td>
-                        <a href="{{ url_for('edit_worker', worker_id=worker[0]) }}"  class="btn edit-btn">
-                            Редактировать
-                        </a>
-                        <form action="{{ url_for('delete_worker', worker_id=worker[0]) }}" method="POST">
-                            <button type="submit" class="btn edit-btn" style="width: 150px;">
-                                Удалить
-                            </button>
-                        </form>
-                        
+                        <div class="btn-group">
+                            <a href="{{ url_for('edit_worker', worker_id=worker[0]) }}" class="btn edit-btn">
+                                Редактировать
+                            </a>
+                            <form action="{{ url_for('delete_worker', worker_id=worker[0]) }}" method="POST">
+                                <button type="submit" class="btn edit-btn" style="width: 150px;">
+                                    Удалить
+                                </button>
+                            </form>
+                            <form action="{{ url_for('toggle_worker_status', worker_id=worker[0]) }}" method="POST">
+                                <button type="submit" class="btn {{ 'btn-danger' if worker[4] else 'btn-success' }}" style="width: 150px;">
+                                    {{ 'Отключить' if worker[4] else 'Включить' }}
+                                </button>
+                            </form>
+                        </div>
                     </td>
+                    
                     
                 </tr>
                 {% endfor %}
